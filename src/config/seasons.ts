@@ -1,4 +1,4 @@
-import { USDG, WETH } from "@/config/brand";
+import { TOKEN, USDG, WETH } from "@/config/brand";
 
 /*
  * Every season setting in ONE file: the clock, season names, quests, points and milestones.
@@ -140,8 +140,8 @@ export const QUESTS: Quest[] = [
   {
     id: "own-plot",
     title: "Own plot",
-    task: "Hold any amount of $REAPO on Robinhood Chain (opens at launch).",
-    rule: "$REAPO balanceOf(wallet) is above 0. Waits for the token address.",
+    task: `Hold any amount of $REAPO on Robinhood Chain${TOKEN.isLive ? "" : " (opens at launch)"}.`,
+    rule: `$REAPO balanceOf(wallet) is above 0.${TOKEN.isLive ? "" : " Waits for the token address."}`,
     points: 15,
     proof: "chain",
     kind: { type: "holdReapo" },

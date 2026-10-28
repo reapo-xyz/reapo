@@ -3,7 +3,7 @@
 // the token page, the buy buttons and every explorer link derive from it. Anything that is not a 0x + 40 hex
 // address is treated as "not launched yet".
 
-const CA: string = "TBA";
+const CA: string = "0xc53be8b12c11d30d7dd687e9444f4a4a6cea05e6";
 
 /**
  * True once the domain points at this deployment. While false, the production *.vercel.app host is served
