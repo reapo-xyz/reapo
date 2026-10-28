@@ -85,3 +85,21 @@ test("eth_getLogs: only the wallet Transfer shape the site issues is relayed", a
   // range cap still holds
   assert.ok("error" in checkBatch([{ method: "eth_getLogs", params: [{ address: USDC.address, topics: [TRANSFER_TOPIC, me], fromBlock: "0x1", toBlock: "0x100000" }] }]));
 });
+
+test("the site-wide relay budget is always charged, also with trusted proxy headers", async () => {
+  const { chargeRelay, BUDGET } = await import("./relay");
+  const prev = process.env.TRUST_PROXY_HEADERS;
+  process.env.TRUST_PROXY_HEADERS = "1";
+  try {
+    const seen: string[] = [];
+    const ok = await chargeRelay(async (bucket) => (seen.push(bucket), true), "203.0.113.7", 5);
+    assert.equal(ok, null);
+    assert.deepEqual(seen, ["rpc", "rpc-site"]);
+    // site bucket exhausted -> refused even though the caller's own budget is fine
+    const refused = await chargeRelay(async (bucket, _k, _u, limit) => bucket !== "rpc-site" || limit !== BUDGET.siteUnits, "203.0.113.8", 5);
+    assert.match(String(refused), /busy/);
+  } finally {
+    if (prev === undefined) delete process.env.TRUST_PROXY_HEADERS;
+    else process.env.TRUST_PROXY_HEADERS = prev;
+  }
+});

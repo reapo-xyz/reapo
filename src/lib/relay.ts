@@ -174,6 +174,19 @@ export function checkBatch(calls: Call[], targets = readTargets()): { units: num
   return { units };
 }
 
+/** Budget spender: (bucket, key, units, limit, windowSec, aggregate) -> true when allowed. */
+export type Spend = (bucket: string, key: string, units: number, limit: number, windowSec: number, aggregate?: boolean) => Promise<boolean>;
+
+/**
+ * Charges a relay request against BOTH budgets: the caller's network and the site-wide ceiling. The site-wide bucket
+ * is always charged, also behind a trusted proxy, so spoofed or rotating client addresses can never exceed it.
+ */
+export async function chargeRelay(spend: Spend, ip: string, units: number): Promise<string | null> {
+  if (!(await spend("rpc", ip, units, BUDGET.units, BUDGET.windowSec, true))) return "Too many chain reads from your network. Slow down a little.";
+  if (!(await spend("rpc-site", "all", units, BUDGET.siteUnits, BUDGET.windowSec))) return "The relay is busy. Try again shortly.";
+  return null;
+}
+
 export type RpcAnswer = { result: unknown } | { error: { code: number; message: string; data?: string } } | { down: true };
 
 export type RelayDeps = {
