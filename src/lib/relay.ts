@@ -1,6 +1,6 @@
 import { BRAND, USDC, WETH, isAddress } from "@/config/brand";
 import { CONTRACTS } from "@/config/contracts";
-import { questTargets } from "@/config/seasons";
+import { logTargets, questTargets } from "@/config/seasons";
 
 /*
  * Rules for the read-only JSON-RPC relay, kept apart from the route so they
@@ -87,6 +87,20 @@ export function namedAddresses(body: Call | Call[]): string[] {
 
 export type Call = { jsonrpc?: string; id?: unknown; method: string; params?: unknown[] };
 
+/** keccak256("Transfer(address,address,uint256)") */
+export const TRANSFER_TOPIC = "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef";
+const PADDED_ADDRESS = /^0x0{24}[0-9a-fA-F]{40}$/;
+
+/** True for { address: <one quest token>, topics: [TRANSFER_TOPIC, <32-byte padded address>] } and nothing else. */
+export function isWalletTransferFilter(filter: { address?: unknown; topics?: unknown }): boolean {
+  if (typeof filter.address !== "string") return false;
+  if (!logTargets().includes(filter.address.toLowerCase())) return false;
+  const t = filter.topics;
+  if (!Array.isArray(t) || t.length !== 2) return false;
+  if (typeof t[0] !== "string" || t[0].toLowerCase() !== TRANSFER_TOPIC) return false;
+  return typeof t[1] === "string" && PADDED_ADDRESS.test(t[1]);
+}
+
 const hexBlock = (v: unknown) => (typeof v === "string" && /^0x[0-9a-fA-F]{1,16}$/.test(v) ? Number(BigInt(v)) : null);
 
 /** Checks a batch and returns its cost in units, or the reason it is refused. */
@@ -104,7 +118,7 @@ export function checkBatch(calls: Call[], targets = readTargets()): { units: num
     if (c.method === "eth_getLogs") {
       logs += 1;
       if (logs > MAX_LOGS_PER_BATCH) return { error: `At most ${MAX_LOGS_PER_BATCH} log queries per request.` };
-      const filter = (params[0] ?? {}) as { address?: unknown; fromBlock?: unknown; toBlock?: unknown; blockHash?: unknown };
+      const filter = (params[0] ?? {}) as { address?: unknown; fromBlock?: unknown; toBlock?: unknown; blockHash?: unknown; topics?: unknown };
       if (typeof filter !== "object" || filter === null || Array.isArray(filter)) return { error: "eth_getLogs needs a filter object." };
       const oddKey = Object.keys(filter).find((k) => !LOG_KEYS.has(k));
       if (oddKey) return { error: `Unsupported filter field: ${oddKey.slice(0, 32)}` };
@@ -114,6 +128,10 @@ export function checkBatch(calls: Call[], targets = readTargets()): { units: num
       const addresses = typeof filter.address === "string" ? [filter.address] : Array.isArray(filter.address) ? filter.address : null;
       if (!addresses || addresses.length === 0 || addresses.length > 3) return { error: "eth_getLogs needs an address filter (1 to 3 addresses)." };
       if (!addresses.every((a) => typeof a === "string" && targets.has(a.toLowerCase()))) return { error: "eth_getLogs address not served by this relay." };
+      // Only the exact shape the site issues: Transfer logs of ONE quest token sent by ONE wallet
+      // (topics = [Transfer, padded from-address]). Topic-less or wildcard queries could return every transfer of a
+      // busy token over the whole window, so they are refused.
+      if (!isWalletTransferFilter(filter)) return { error: "eth_getLogs filter shape not served by this relay." };
       // Both ends must be hex numbers: "latest" or a missing bound would let one request scan the whole chain.
       const from = hexBlock(filter.fromBlock);
       const to = hexBlock(filter.toBlock);

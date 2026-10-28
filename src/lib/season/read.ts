@@ -15,6 +15,7 @@ import type { Readings } from "@/lib/season/quests";
  */
 
 const TRANSFER = toEventSelector("Transfer(address,address,uint256)");
+// Same filter shape the relay accepts (src/lib/relay.ts isWalletTransferFilter).
 const hex = (n: number | bigint) => `0x${BigInt(n).toString(16)}`;
 const balanceOf = (token: string, who: string) => ({
   method: "eth_call",

@@ -63,3 +63,25 @@ test("inherited object names are not methods", () => {
     assert.ok("error" in checkBatch([{ method, params: [] }]), method);
   }
 });
+
+test("eth_getLogs: only the wallet Transfer shape the site issues is relayed", async () => {
+  const { TRANSFER_TOPIC } = await import("./relay");
+  const me = `0x${"0".repeat(24)}${"ab".repeat(20)}`;
+  const logs = (filter: Record<string, unknown>) => checkBatch([{ method: "eth_getLogs", params: [{ fromBlock: "0x100", toBlock: "0x200", ...filter }] }]);
+  // the site's own query
+  assert.ok("units" in logs({ address: USDC.address, topics: [TRANSFER_TOPIC, me] }));
+  // topic-less, wildcard, extra or wrong topics, arrays of addresses, non-quest targets: refused
+  assert.ok("error" in logs({ address: USDC.address }));
+  assert.ok("error" in logs({ address: USDC.address, topics: [] }));
+  assert.ok("error" in logs({ address: USDC.address, topics: [TRANSFER_TOPIC] }));
+  assert.ok("error" in logs({ address: USDC.address, topics: [TRANSFER_TOPIC, null] }));
+  assert.ok("error" in logs({ address: USDC.address, topics: [null, me] }));
+  assert.ok("error" in logs({ address: USDC.address, topics: [TRANSFER_TOPIC, [me, me]] }));
+  assert.ok("error" in logs({ address: USDC.address, topics: [TRANSFER_TOPIC, me, me] }));
+  assert.ok("error" in logs({ address: USDC.address, topics: [TRANSFER_TOPIC, `0x${"ff".repeat(32)}`] }));
+  assert.ok("error" in logs({ address: USDC.address, topics: [`0x${"11".repeat(32)}`, me] }));
+  assert.ok("error" in logs({ address: [USDC.address], topics: [TRANSFER_TOPIC, me] }));
+  assert.ok("error" in logs({ address: "0x4200000000000000000000000000000000000006", topics: [TRANSFER_TOPIC, me] }));
+  // range cap still holds
+  assert.ok("error" in checkBatch([{ method: "eth_getLogs", params: [{ address: USDC.address, topics: [TRANSFER_TOPIC, me], fromBlock: "0x1", toBlock: "0x100000" }] }]));
+});

@@ -171,4 +171,9 @@ export function questTargets(): string[] {
   return [...out];
 }
 
+/** Tokens whose Transfer logs the quest board reads (sentToken quests only). */
+export function logTargets(): string[] {
+  return [...new Set(QUESTS.flatMap((q) => (q.kind.type === "sentToken" ? [q.kind.token.toLowerCase()] : [])))];
+}
+
 export const totalQuestPoints = () => QUESTS.reduce((s, q) => s + q.points, 0);
