@@ -1,14 +1,14 @@
-// Proves that a deployed address runs exactly this repository's ReapoSeasonLog on Base.
+// Proves that a deployed address runs exactly this repository's ReapoSeasonLog on Robinhood Chain.
 //   (cd contracts && ./setup.sh && forge build --force) && npm run contracts:artifacts -- --check
 //   npm run verify-deployment -- --log 0x.. --log-tx 0x..  (the creation tx is required)
 // Expected constructor values default to the ones in src/lib/contracts/artifacts.json (constructorArgs);
 // override with --genesis <unix seconds> --season-days <n> if the owner deployed with other values.
 // Prints OK/FAIL per check and exits non-zero on any FAIL. See scripts/verify-lib.mjs.
-// RPC: VERIFY_RPC_URL from your shell, else a public Base endpoint.
+// RPC: VERIFY_RPC_URL from your shell, else a public Robinhood Chain endpoint.
 import { readFileSync } from "node:fs";
 import { verifyDeployment } from "./verify-lib.mjs";
 
-const RPC = process.env.VERIFY_RPC_URL || "https://base-rpc.publicnode.com";
+const RPC = process.env.VERIFY_RPC_URL || "https://robinhood-rpc.publicnode.com";
 const args = process.argv.slice(2);
 const opt = (name) => (args.includes(name) ? args[args.indexOf(name) + 1] : undefined);
 

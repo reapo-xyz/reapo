@@ -13,6 +13,10 @@ export const ERC20_ABI = parseAbi([
   "event Transfer(address indexed from, address indexed to, uint256 value)",
 ]);
 
+export const FEED_ABI = parseAbi([
+  "function latestRoundData() view returns (uint80 roundId, int256 answer, uint256 startedAt, uint256 updatedAt, uint80 answeredInRound)",
+]);
+
 export const LOG_ABI = parseAbi([
   "struct Farmer { uint32 lastDay; uint16 streak; uint16 bestStreak; uint16 checkIns; }",
   "struct SeasonTotals { uint32 farmers; uint32 checkIns; uint32 streakStamps; uint32 selfStamps; }",
@@ -32,6 +36,7 @@ export const LOG_ABI = parseAbi([
   "function selfStampOf(uint256 season, address wallet, bytes32 questId) view returns (SelfStamp)",
   "function checkedInToday(address wallet) view returns (bool)",
   "function liveStreak(address wallet) view returns (uint16)",
+  "function chainBlock() view returns (uint64)",
   "event CheckedIn(uint256 indexed season, address indexed wallet, uint256 day, uint16 streak, uint16 checkIns)",
   "event StreakStamped(uint256 indexed season, address indexed wallet, uint16 required, uint16 bestStreak)",
   "event SelfClaimStamped(uint256 indexed season, address indexed wallet, bytes32 indexed questId, bytes32 evidence)",

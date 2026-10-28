@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { BRAND, CHAIN, LAUNCHPAD, TOKEN, USDC, WETH, explorerAddress } from "@/config/brand";
+import { BRAND, CHAIN, ETH_USD_FEED, LAUNCHPAD, TOKEN, USDG, WETH, explorerAddress } from "@/config/brand";
+import { DAY_BLOCKS } from "@/config/seasons";
 import { CONTRACTS, CONTRACT_NAMES, GAS, logLive } from "@/config/contracts";
 import { CHECK_IN_POINTS, LEVELS, MILESTONES, QUESTS, SEASON_CLOCK, SEASON_NAMES, totalQuestPoints } from "@/config/seasons";
 import { DocShell, type DocNav } from "@/components/site/DocShell";
@@ -15,7 +16,7 @@ export const metadata = pageMeta({
 });
 
 const NAV: DocNav = [
-  { group: "Basics", items: [{ id: "what", label: `What is ${BRAND.name}` }, { id: "start", label: "Getting started" }, { id: "wallets", label: "Wallets and Base" }] },
+  { group: "Basics", items: [{ id: "what", label: `What is ${BRAND.name}` }, { id: "start", label: "Getting started" }, { id: "wallets", label: `Wallets and ${CHAIN.name}` }] },
   {
     group: "The season",
     items: [
@@ -46,13 +47,13 @@ const FAQ = [
   },
   {
     q: `How does ${BRAND.name} work?`,
-    a: `The site reads public ${CHAIN.name} data for a wallet (its nonce, balances and transfer logs) at one block and applies the published rule of each quest to it. Daily check-ins and streaks are kept by the ${CONTRACT_NAMES.log} contract, which can also stamp streak quests on its own. Before that contract is deployed, check-ins run in practice mode in your browser.`,
+    a: `The site reads public ${CHAIN.name} data for a wallet (its nonce, balances and transfer logs) at one block and applies the published rule of each quest to it. Daily check-ins and streaks are kept by the ${CONTRACT_NAMES.log} contract, which can also stamp streak quests on its own.${logLive() ? "" : " Before that contract is deployed, check-ins run in practice mode in your browser."}`,
   },
   {
     q: `How do I buy ${BRAND.symbol}?`,
     a: TOKEN.isLive
-      ? `${BRAND.symbol} is an ERC-20 on ${CHAIN.name} at ${BRAND.ca}. It launched on ${LAUNCHPAD.name} and trades in its ${LAUNCHPAD.pool} pool. Check the address on the token page before you trade.`
-      : `${BRAND.symbol} has not launched yet. It will launch on ${LAUNCHPAD.name} on ${CHAIN.name}; the contract address is published on the token page first. Until then, any address claiming to be ${BRAND.symbol} is not ours.`,
+      ? `${BRAND.symbol} is an ERC-20 on ${CHAIN.name} at ${BRAND.ca}. It trades on ${LAUNCHPAD.name}; the buy buttons on this site open its page there. Check the address on the token page before you trade.`
+      : `${BRAND.symbol} has not launched yet. It is planned to launch on ${LAUNCHPAD.name} on ${CHAIN.name}; the contract address is published on the token page first. Until then, any address claiming to be ${BRAND.symbol} is not ours.`,
   },
   { q: `Which network is ${BRAND.name} on?`, a: `${CHAIN.name}, chain id ${CHAIN.id}. Gas is paid in ETH. The ${BRAND.symbol} token and the season log contract are on the same network.` },
   {
@@ -108,7 +109,7 @@ export default function DocsPage() {
           <li>
             <span>
               <b>Open the farm and connect a wallet.</b>
-              Any wallet that reaches {CHAIN.name} works: Coinbase Wallet, MetaMask, Phantom, Rabby and others, or a phone wallet over WalletConnect. Connecting only shares your address. If your wallet is on another network, the site asks it to switch to {CHAIN.name} and adds the network if needed.
+              Any wallet that reaches {CHAIN.name} works: MetaMask, Rabby, OKX Wallet, Coinbase Wallet and others, or a phone wallet over WalletConnect. Phantom cannot add custom networks, so it cannot reach this chain. Connecting only shares your address. If your wallet is on another network, the site asks it to switch to {CHAIN.name} and adds the network if needed.
             </span>
           </li>
           <li>
@@ -135,7 +136,7 @@ export default function DocsPage() {
       <section id="wallets">
         <h2>Wallets and {CHAIN.name}</h2>
         <p>
-          {CHAIN.name} is an Ethereum layer 2 with chain id {CHAIN.id}. Gas is paid in ETH and is usually a small fraction of a cent to a few cents per transaction. Blocks arrive about every {CHAIN.blockSeconds} seconds, which is why the quest look-back window of one day is {(86_400 / CHAIN.blockSeconds).toLocaleString("en-US")} blocks.
+          {CHAIN.name} is an Ethereum layer 2 with chain id {CHAIN.id}. Gas is paid in ETH and is usually a small fraction of a cent to a few cents per transaction. Blocks arrive about every tenth of a second, which is why the quest look-back window of one day is {DAY_BLOCKS.toLocaleString("en-US")} blocks.
         </p>
         <p>
           {BRAND.name} never asks for a seed phrase or a private key and never moves your tokens. The only transactions it ever offers are a check-in and a quest stamp on the season log contract; both carry no ETH value and you read them in your wallet before signing.
@@ -206,7 +207,7 @@ export default function DocsPage() {
                 <tr key={q.id}>
                   <td>{q.title}</td>
                   <td>{q.rule}</td>
-                  <td>{q.proof === "contract" ? "the contract" : "the site, from Base"}</td>
+                  <td>{q.proof === "contract" ? "the contract" : `the site, from ${CHAIN.name}`}</td>
                   <td className="n">{q.points}</td>
                 </tr>
               ))}
@@ -218,7 +219,7 @@ export default function DocsPage() {
           A cleared quest can be stamped on the season log. Streak quests are <b>contract-checked</b>: the contract reads your best streak of the season and refuses the stamp if it is too short. The other quests are <b>self-claimed</b>: the stamp records the quest and a hash of the values the board read, but the contract cannot check them, so treat such a stamp as the wallet&apos;s own public note.
         </p>
         <p>
-          The quest tokens are native USDC on {CHAIN.name} (<span className="addr">{USDC.address}</span>) and wrapped ETH (<span className="addr">{WETH}</span>). The transfer quest looks at USDC Transfer events sent from your address in the last day of blocks.
+          The quest tokens are {USDG.name} ({USDG.symbol}) on {CHAIN.name} (<span className="addr">{USDG.address}</span>) and wrapped ETH (<span className="addr">{WETH}</span>). The transfer quest looks at {USDG.symbol} Transfer events sent from your address in the last day of blocks.
         </p>
       </section>
 
@@ -251,7 +252,7 @@ export default function DocsPage() {
       <section id="farmboard">
         <h2>Farmboard</h2>
         <p>
-          The Farmboard shows your season at a glance: level and progress bar, quests cleared, quest and check-in points, your best streak, and a history with one row per board check (the time, the block and the totals). The history lives in your browser; the check-ins themselves live on chain once the contract is deployed.
+          The Farmboard shows your season at a glance: level and progress bar, quests cleared, quest and check-in points, your best streak, and a history with one row per board check (the time, the block and the totals). The history lives in your browser; the check-ins themselves live on chain{deployed ? ", in the season log contract" : " once the contract is deployed"}.
         </p>
       </section>
 
@@ -312,7 +313,10 @@ export default function DocsPage() {
       <section id="practice">
         <h2>Practice mode</h2>
         <p>
-          Until the season log is deployed, the check-in and stamp buttons run in practice mode. They follow the same rules as the contract (same clock, same streak logic) but keep everything in your browser, and nothing is sent to {CHAIN.name}. Quest checks are not practice: they always read the real chain.
+          {deployed
+            ? "The season log is live, so check-ins and stamps are real transactions. Practice mode is only used if the site is built without a contract address: the buttons then"
+            : "Until the season log is deployed, the check-in and stamp buttons run in practice mode. They"}{" "}
+          follow the same rules as the contract (same clock, same streak logic) but keep everything in your browser, and nothing is sent to {CHAIN.name}. Quest checks are not practice: they always read the real chain.
         </p>
       </section>
 
@@ -320,7 +324,7 @@ export default function DocsPage() {
         <h2>Live data and sources</h2>
         <ul>
           <li>Blocks, gas price, block time and transactions per block: public {CHAIN.name} RPC endpoints, read every few seconds.</li>
-          <li>ETH / USD: Coinbase public spot price, with GeckoTerminal&apos;s WETH price on {CHAIN.name} as the fallback.</li>
+          <li>ETH / USD: the Chainlink ETH / USD feed on {CHAIN.name} (<span className="addr">{ETH_USD_FEED}</span>), read on chain.</li>
           <li>{BRAND.symbol} after launch: name, symbol, decimals and supply read from the token contract; holders from Blockscout; price and pool liquidity from GeckoTerminal.</li>
           <li>Wallet quests: nonce, ETH balance, token balances and transfer logs read at one block through this site&apos;s rate-limited relay.</li>
         </ul>
@@ -330,7 +334,7 @@ export default function DocsPage() {
       <section id="token">
         <h2>{BRAND.symbol}</h2>
         <p>
-          {BRAND.symbol} is the {BRAND.name} token on {CHAIN.name}. {TOKEN.isLive ? <>Its contract address is <span className="addr">{BRAND.ca}</span>.</> : "It has not launched yet; the contract address is published on the token page first."} It launches on {LAUNCHPAD.name}. After launch it trades in its {LAUNCHPAD.pool} pool, set up with a fixed supply of 1 billion tokens, 18 decimals, liquidity locked permanently, and a 1% fee taken in ETH or as creator tax.
+          {BRAND.symbol} is the {BRAND.name} token on {CHAIN.name}. {TOKEN.isLive ? <>Its contract address is <span className="addr">{BRAND.ca}</span>.</> : "It has not launched yet; the contract address is published on the token page first."} It is planned to launch on {LAUNCHPAD.name}, the launchpad on {CHAIN.name}; the buy buttons open the launchpad until the address is published, then the token&apos;s own page there.
         </p>
         <p>
           <Link href="/token" className="btn">

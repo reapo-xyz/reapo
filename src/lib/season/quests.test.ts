@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { QUESTS, USDC_QUEST_TOKEN } from "./fixtures";
+import { QUESTS, USDG_QUEST_TOKEN } from "./fixtures";
 import { evaluate, score, type Readings } from "./quests";
 
 const base: Readings = {
@@ -8,8 +8,8 @@ const base: Readings = {
   block: 100,
   nonce: 30,
   ethWei: 2_000_000_000_000_000n,
-  tokens: { [USDC_QUEST_TOKEN]: 5_000_000n, "0x4200000000000000000000000000000000000006": 0n },
-  sent: { [USDC_QUEST_TOKEN]: { count: 2, lastBlock: 99, lastTx: "0xab", fromBlock: 1 } },
+  tokens: { [USDG_QUEST_TOKEN]: 5_000_000n, "0x0bd7d308f8e1639fab988df18a8011f41eacad73": 0n },
+  sent: { [USDG_QUEST_TOKEN]: { count: 2, lastBlock: 99, lastTx: "0xab", fromBlock: 1 } },
   farmer: { lastDay: 3, streak: 3, bestStreak: 3, checkIns: 3 },
   today: 3,
   checkInSource: "practice",
@@ -23,7 +23,7 @@ test("chain quests decide on the reading and show it", () => {
   assert.equal(evaluate(byId("worn-boots"), { ...base, nonce: 24 }).status, "open");
   assert.equal(evaluate(byId("seed-jar"), base).status, "done");
   assert.equal(evaluate(byId("seed-jar"), { ...base, ethWei: 999_999_999_999_999n }).status, "open");
-  assert.equal(evaluate(byId("steady-stalk"), base).input, "5 USDC");
+  assert.equal(evaluate(byId("steady-stalk"), base).input, "5 USDG");
   assert.equal(evaluate(byId("wrapped-grain"), base).status, "open");
   assert.equal(evaluate(byId("market-day"), base).status, "done");
 });

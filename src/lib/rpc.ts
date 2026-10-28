@@ -7,7 +7,7 @@ const ENDPOINTS = ["/api/rpc", CHAIN.rpc, CHAIN.fallbackRpc].filter((url, i, all
 let preferred = 0;
 
 /**
- * Minimal JSON-RPC read against Base from the browser. Tries the
+ * Minimal JSON-RPC read against Robinhood Chain from the browser. Tries the
  * site relay, then the configured endpoint, then the public fallback.
  */
 export async function rpc<T>(method: string, params: unknown[] = []): Promise<T> {

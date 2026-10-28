@@ -7,7 +7,9 @@ import { ALL_ERRORS, ERROR_WORDS } from "@/lib/abi";
  * RPC host), then the configured RPC, then the public fallback.
  */
 
-const ENDPOINTS = ["/api/rpc", CHAIN.rpc, CHAIN.fallbackRpc].filter((u, i, all) => all.indexOf(u) === i);
+// A local test chain (anvil) gets no mainnet fallback, so reads never mix two chains.
+const LOCAL = /^https?:\/\/(127\.0\.0\.1|localhost|\[::1\])(:\d+)?(\/|$)/.test(CHAIN.rpc);
+const ENDPOINTS = (LOCAL ? ["/api/rpc", CHAIN.rpc] : ["/api/rpc", CHAIN.rpc, CHAIN.fallbackRpc]).filter((u, i, all) => all.indexOf(u) === i);
 let preferred = 0;
 
 export class ChainError extends Error {

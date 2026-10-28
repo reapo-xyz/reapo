@@ -1,4 +1,4 @@
-import { BRAND, USDC, WETH, isAddress } from "@/config/brand";
+import { BRAND, ETH_USD_FEED, USDG, WETH, isAddress } from "@/config/brand";
 import { CONTRACTS } from "@/config/contracts";
 import { logTargets, questTargets } from "@/config/seasons";
 
@@ -9,8 +9,11 @@ import { logTargets, questTargets } from "@/config/seasons";
 
 export const MAX_CALLS = 20;
 export const MAX_LOGS_PER_BATCH = 3;
-/** Base publicnode answers at most 50,000 blocks per log query; a quest window is ~24 h = 43,200 blocks. */
-export const MAX_LOG_SPAN = 45_000;
+/**
+ * A quest window is ~24 h = 840,000 Robinhood Chain blocks (src/config/seasons.ts DAY_BLOCKS). The official RPC answers
+ * that span for the one-token, one-sender filter below; a little headroom on top.
+ */
+export const MAX_LOG_SPAN = 860_000;
 export const MAX_GAS = 5_000_000;
 
 const GAS_CAP_HEX = `0x${MAX_GAS.toString(16)}`;
@@ -59,10 +62,10 @@ export const MAX_CALL_DATA = 20_000;
 const dataLimit = (to: unknown) => (typeof to === "string" ? MAX_CALL_DATA : 0);
 
 /**
- * Contracts the browser reads through the relay: USDC, WETH, the tokens and contracts named by quests, the token
+ * Contracts the browser reads through the relay: USDG, WETH, the ETH / USD feed, the tokens and contracts named by quests, the token
  * once launched and the ReapoSeasonLog once deployed. Balances, nonces, code and receipts are answered for any address. */
 export function readTargets() {
-  const list: string[] = [USDC.address, WETH, ...questTargets()];
+  const list: string[] = [USDG.address, WETH, ETH_USD_FEED, ...questTargets()];
   if (isAddress(BRAND.ca)) list.push(BRAND.ca);
   for (const a of [CONTRACTS.log]) if (isAddress(a)) list.push(a);
   return new Set(list.map((a) => a.toLowerCase()));

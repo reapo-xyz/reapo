@@ -23,7 +23,7 @@ depth = 48
 fail_on_revert = false
 
 [rpc_endpoints]
-base = "https://base-rpc.publicnode.com"
+robinhood = "https://rpc.mainnet.chain.robinhood.com"
 
 [lint]
 lint_on_build = false

@@ -3,12 +3,14 @@ import { CHAIN, serverRpc } from "@/config/brand";
 import { readCappedResponse } from "@/lib/server/capped";
 
 /*
- * JSON-RPC reads against Base from the server. The configured
+ * JSON-RPC reads against Robinhood Chain from the server. The configured
  * endpoint is tried first, then the public fallback. Reads only: nothing here
  * signs or sends a transaction.
  */
 
-const endpoints = () => [serverRpc(), CHAIN.fallbackRpc, CHAIN.spareRpc].filter((url, i, all) => all.indexOf(url) === i);
+const isLocal = (url: string) => /^https?:\/\/(127\.0\.0\.1|localhost|\[::1\])(:\d+)?(\/|$)/.test(url);
+// A local test chain (anvil) must never fall back to mainnet endpoints: answers from two chains would mix.
+const endpoints = () => (isLocal(serverRpc()) ? [serverRpc()] : [serverRpc(), CHAIN.fallbackRpc, CHAIN.spareRpc].filter((url, i, all) => all.indexOf(url) === i));
 let preferred = 0;
 
 export class RpcError extends Error {

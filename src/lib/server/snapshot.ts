@@ -1,15 +1,15 @@
 import "server-only";
 import { decodeFunctionResult, encodeFunctionData, type Abi } from "viem";
-import { BRAND, CHAIN, WETH, isAddress } from "@/config/brand";
+import { BRAND, CHAIN, ETH_USD_FEED, isAddress } from "@/config/brand";
 import { CONTRACTS, logLive } from "@/config/contracts";
-import { ERC20_ABI, LOG_ABI } from "@/lib/abi";
+import { ERC20_ABI, FEED_ABI, LOG_ABI } from "@/lib/abi";
 import { rpcBatch } from "@/lib/feeds/rpc";
 import { readCappedResponse } from "@/lib/server/capped";
 import { seasonAt } from "@/lib/season/clock";
 
 /*
- * Live facts for the whole site: the latest Base block, block pace, gas price, transactions in the latest block,
- * ETH / USD, the $REAPO token once its address is published (name, symbol, decimals, supply from the token itself,
+ * Live facts for the whole site, read from Robinhood Chain: the latest block, block pace, gas price, transactions in the latest block,
+ * ETH / USD from the Chainlink feed on chain, the $REAPO token once its address is published (name, symbol, decimals, supply from the token itself,
  * holders from Blockscout, price and liquidity from GeckoTerminal) and the ReapoSeasonLog season totals once deployed.
  * Every number comes from a live source; a source that fails leaves its field null and the site shows "—".
  */
@@ -18,7 +18,7 @@ export type ChainSnapshot = {
   at: number;
   block: number | null;
   blockTime: number | null;
-  /** Average seconds per block over the last 1,000 blocks. */
+  /** Average seconds per block over the last 3,000 blocks. */
   blockPace: number | null;
   gasGwei: number | null;
   txsInBlock: number | null;
@@ -62,16 +62,9 @@ async function getJson(url: string, headers: Record<string, string> = {}): Promi
   }
 }
 
-/** ETH / USD from Coinbase's public spot price, else GeckoTerminal's WETH price on Base. */
-async function ethUsd(): Promise<{ v: number | null; source: string | null }> {
-  const cb = (await getJson("https://api.coinbase.com/v2/prices/ETH-USD/spot")) as { data?: { amount?: string } } | null;
-  const a = Number(cb?.data?.amount);
-  if (Number.isFinite(a) && a > 0) return { v: a, source: "Coinbase spot" };
-  const gt = (await getJson(`https://api.geckoterminal.com/api/v2/simple/networks/base/token_price/${WETH}`)) as { data?: { attributes?: { token_prices?: Record<string, string> } } } | null;
-  const p = Number(gt?.data?.attributes?.token_prices?.[WETH.toLowerCase()]);
-  if (Number.isFinite(p) && p > 0) return { v: p, source: "GeckoTerminal (WETH on Base)" };
-  return { v: null, source: null };
-}
+/** ETH / USD from the Chainlink ETH / USD feed on Robinhood Chain (8 decimals). */
+const FEED_READ: Read = { to: ETH_USD_FEED, abi: FEED_ABI as Abi, fn: "latestRoundData" };
+const ETH_USD_SOURCE = "Chainlink ETH / USD on Robinhood Chain";
 
 /** Holder count from Blockscout: the PRO API when BLOCKSCOUT_API_KEY is set, else the public instance (may refuse bots). */
 async function holders(ca: string): Promise<number | null> {
@@ -82,9 +75,9 @@ async function holders(ca: string): Promise<number | null> {
   return Number.isFinite(n) && n >= 0 ? n : null;
 }
 
-/** Price and pool liquidity of the token on Base from GeckoTerminal (keyless). */
+/** Price and pool liquidity of the token on Robinhood Chain from GeckoTerminal (keyless). */
 async function market(ca: string): Promise<{ priceUsd: number | null; liquidityUsd: number | null }> {
-  const j = (await getJson(`https://api.geckoterminal.com/api/v2/networks/base/tokens/${ca}`)) as { data?: { attributes?: { price_usd?: string; total_reserve_in_usd?: string } } } | null;
+  const j = (await getJson(`https://api.geckoterminal.com/api/v2/networks/robinhood/tokens/${ca.toLowerCase()}`)) as { data?: { attributes?: { price_usd?: string; total_reserve_in_usd?: string } } } | null;
   const p = Number(j?.data?.attributes?.price_usd);
   const l = Number(j?.data?.attributes?.total_reserve_in_usd);
   return { priceUsd: Number.isFinite(p) && p > 0 ? p : null, liquidityUsd: Number.isFinite(l) && l > 0 ? l : null };
@@ -93,31 +86,32 @@ async function market(ca: string): Promise<{ priceUsd: number | null; liquidityU
 export async function readSnapshot(): Promise<ChainSnapshot> {
   const ca = isAddress(BRAND.ca) ? BRAND.ca : null;
   const season = seasonAt(Math.floor(Date.now() / 1000));
-  const reads: Read[] = [];
+  const reads: Read[] = [FEED_READ];
   if (ca) for (const fn of ["name", "symbol", "totalSupply", "decimals"]) reads.push({ to: ca, abi: ERC20_ABI as Abi, fn });
   if (logLive()) reads.push({ to: CONTRACTS.log, abi: LOG_ABI as Abi, fn: "totalsOf", args: [BigInt(season.index)] });
   const head = [
     { method: "eth_getBlockByNumber", params: ["latest", false] },
     { method: "eth_gasPrice", params: [] },
   ];
-  const [h, results, price, extra] = await Promise.all([
+  const [h, results, extra] = await Promise.all([
     rpcBatch<unknown>(head).catch(() => [null, null]),
-    reads.length ? rpcBatch<unknown>(reads.map(call)).catch(() => reads.map(() => null)) : Promise.resolve([] as unknown[]),
-    ethUsd(),
+    rpcBatch<unknown>(reads.map(call)).catch(() => reads.map(() => null)),
     ca ? Promise.all([holders(ca), market(ca)]) : Promise.resolve(null),
   ]);
   const block = h[0] && typeof h[0] === "object" ? (h[0] as { number: string; timestamp: string; transactions?: unknown[] }) : null;
   const gas = typeof h[1] === "string" ? h[1] : null;
   let pace: number | null = null;
   if (block) {
-    const back = await rpcBatch<{ timestamp: string }>([{ method: "eth_getBlockByNumber", params: [`0x${(BigInt(block.number) - 1000n).toString(16)}`, false] }]).catch(() => [null]);
-    if (back[0]) pace = (Number(BigInt(block.timestamp)) - Number(BigInt(back[0].timestamp))) / 1000;
+    const back = await rpcBatch<{ timestamp: string }>([{ method: "eth_getBlockByNumber", params: [`0x${(BigInt(block.number) - 3000n).toString(16)}`, false] }]).catch(() => [null]);
+    if (back[0]) pace = (Number(BigInt(block.timestamp)) - Number(BigInt(back[0].timestamp))) / 3000;
   }
-  let i = 0;
+  const feed = decode<readonly [bigint, bigint, bigint, bigint, bigint]>(FEED_READ, results[0]);
+  const ethUsd = feed && feed[1] > 0n ? Number(feed[1]) / 1e8 : null;
+  let i = 1;
   let token: ChainSnapshot["token"] = null;
   if (ca) {
-    const v = reads.slice(0, 4).map((r, k) => decode<string | bigint | number>(r, results[k]));
-    i = 4;
+    const v = reads.slice(i, i + 4).map((r, k) => decode<string | bigint | number>(r, results[i + k]));
+    i += 4;
     token = {
       name: typeof v[0] === "string" ? v[0] : null,
       symbol: typeof v[1] === "string" ? v[1] : null,
@@ -140,8 +134,8 @@ export async function readSnapshot(): Promise<ChainSnapshot> {
     blockPace: pace,
     gasGwei: gas ? Number(BigInt(gas)) / 1e9 : null,
     txsInBlock: block && Array.isArray(block.transactions) ? block.transactions.length : null,
-    ethUsd: price.v,
-    ethUsdSource: price.source,
+    ethUsd,
+    ethUsdSource: ethUsd === null ? null : ETH_USD_SOURCE,
     token,
     season: seasonTotals,
   };

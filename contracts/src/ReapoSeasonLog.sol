@@ -2,13 +2,15 @@
 pragma solidity ^0.8.24;
 
 /// @title ReapoSeasonLog
-/// @notice Public season log for Reapo on Base. A wallet checks in once per UTC day; the contract keeps its
+/// @notice Public season log for Reapo on Robinhood Chain. A wallet checks in once per UTC day; the contract keeps its
 ///         streak per season. Streak quests are stamped only when the contract itself sees the streak
 ///         (contract-checked). Other quests can be stamped as self-claimed with an evidence hash; those stamps
 ///         are a public note by the wallet, not a proof, and the site labels them that way.
 /// @dev No owner, no admin, no fees, no payable function, no upgrade path, no token. Season and day
 ///      boundaries come from two constructor values that never change: GENESIS (unix seconds, start of
 ///      day 0 and season 0) and SEASON_DAYS. Days are counted in whole 86,400 second steps from GENESIS.
+///      On Arbitrum-style chains such as Robinhood Chain `block.number` reports the parent chain's block, so stamp
+///      blocks come from the ArbSys precompile when it answers, and from `block.number` everywhere else (local tests).
 contract ReapoSeasonLog {
     /// @notice Unix time of day 0 / season 0.
     uint64 public immutable GENESIS;
@@ -17,6 +19,13 @@ contract ReapoSeasonLog {
 
     /// @notice Highest streak length a streak stamp can ask for.
     uint16 public constant MAX_STREAK_STAMP = 365;
+
+    /// @dev ArbSys precompile. `arbBlockNumber()` returns the chain's own block number.
+    address private constant ARB_SYS = address(0x64);
+    bytes4 private constant ARB_BLOCK_NUMBER = 0xa3b1b31d;
+    /// @dev Gas forwarded to ArbSys. The real precompile needs about a thousand; the cap keeps a chain (or a local
+    ///      fork) where 0x64 holds failing code from burning the whole transaction's gas.
+    uint256 private constant ARB_SYS_GAS = 30_000;
 
     struct Farmer {
         uint32 lastDay; // day index of the latest check-in (valid only when checkIns > 0)
@@ -39,7 +48,7 @@ contract ReapoSeasonLog {
 
     mapping(uint256 season => mapping(address wallet => Farmer)) private _farmers;
     mapping(uint256 season => SeasonTotals) private _totals;
-    /// season => wallet => required streak => block number of the stamp (0 = none)
+    /// season => wallet => required streak => chain block number of the stamp (0 = none)
     mapping(uint256 season => mapping(address wallet => mapping(uint16 required => uint64))) private _streakStamps;
     mapping(uint256 season => mapping(address wallet => mapping(bytes32 questId => SelfStamp))) private _selfStamps;
 
@@ -114,7 +123,7 @@ contract ReapoSeasonLog {
         uint16 best = _farmers[season][msg.sender].bestStreak;
         if (best < required) revert StreakTooShort(best, required);
         if (_streakStamps[season][msg.sender][required] != 0) revert AlreadyStamped();
-        _streakStamps[season][msg.sender][required] = uint64(block.number);
+        _streakStamps[season][msg.sender][required] = chainBlock();
         _totals[season].streakStamps += 1;
         emit StreakStamped(season, msg.sender, required, best);
     }
@@ -128,7 +137,7 @@ contract ReapoSeasonLog {
         (uint256 season, ) = currentSeason();
         SelfStamp storage s = _selfStamps[season][msg.sender][questId];
         if (s.blockNumber != 0) revert AlreadyStamped();
-        s.blockNumber = uint64(block.number);
+        s.blockNumber = chainBlock();
         s.evidence = evidence;
         _totals[season].selfStamps += 1;
         emit SelfClaimStamped(season, msg.sender, questId, evidence);
@@ -169,5 +178,15 @@ contract ReapoSeasonLog {
         Farmer storage f = _farmers[d / SEASON_DAYS][wallet];
         if (f.checkIns == 0) return 0;
         return f.lastDay == d || f.lastDay + 1 == d ? f.streak : 0;
+    }
+
+    /// @notice The chain's current block: ArbSys `arbBlockNumber()` when the precompile answers, else `block.number`.
+    function chainBlock() public view returns (uint64) {
+        (bool ok, bytes memory ret) = ARB_SYS.staticcall{gas: ARB_SYS_GAS}(abi.encodeWithSelector(ARB_BLOCK_NUMBER));
+        if (ok && ret.length == 32) {
+            uint256 n = abi.decode(ret, (uint256));
+            if (n != 0 && n <= type(uint64).max) return uint64(n);
+        }
+        return uint64(block.number);
     }
 }

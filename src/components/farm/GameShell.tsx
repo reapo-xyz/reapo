@@ -190,7 +190,7 @@ function Welcome({ onEnter }: { onEnter: () => void }) {
           <button type="button" className="btn wide" onClick={onEnter} data-testid="welcome-enter">
             Look around first
           </button>
-          <p className="meta">Works with Coinbase Wallet, MetaMask, Phantom, Rabby and any wallet that reaches {CHAIN.name}, or a phone wallet over WalletConnect.</p>
+          <p className="meta">Works with MetaMask, Rabby, OKX Wallet, Coinbase Wallet and any wallet that can add {CHAIN.name}, or a phone wallet over WalletConnect.</p>
           <p className="meta">
             New here? <Link href="/docs">Read the season guide</Link>
           </p>
@@ -268,7 +268,7 @@ export function GameShell({ initialPanel = null, welcome = false }: { initialPan
               Season {season.season.number}: {season.season.name}
             </b>{" "}
             <span>
-              · {season.done}/{QUESTS.length} quests · {season.liveMode ? "check-ins on Base" : "practice check-ins"} · {SEASON_STATUS}
+              · {season.done}/{QUESTS.length} quests · {season.liveMode ? `check-ins on ${CHAIN.name}` : "practice check-ins"} · {SEASON_STATUS}
             </span>
           </div>
           <nav className="dock" aria-label="Menu">

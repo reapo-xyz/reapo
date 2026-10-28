@@ -2,7 +2,7 @@ import type { Quest } from "@/config/seasons";
 import type { FarmerState } from "@/lib/season/clock";
 
 /*
- * Quest checks as pure functions over readings taken from Base at one block. Each result carries the exact input
+ * Quest checks as pure functions over readings taken from Robinhood Chain at one block. Each result carries the exact input
  * it was decided on, so the board can show "nonce 31 at block 53,144,686" next to the tick.
  */
 
@@ -14,7 +14,7 @@ export type Readings = {
   ethWei: bigint | null;
   /** balanceOf(address) per token, keyed by lowercase token address. */
   tokens: Record<string, bigint | null>;
-  /** USDC-style Transfer logs sent by the wallet in the look-back window, keyed by lowercase token. */
+  /** ERC-20 Transfer logs sent by the wallet in the look-back window, keyed by lowercase token. */
   sent: Record<string, { count: number; lastBlock: number | null; lastTx: string | null; fromBlock: number } | null>;
   /** $REAPO balance; undefined while the token has no address. */
   reapo?: bigint | null;

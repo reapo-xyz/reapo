@@ -10,7 +10,7 @@
 //     by the ABI-encoded (GENESIS, SEASON_DAYS) and nothing more.
 // Every check fails closed: an RPC error, an empty or malformed answer is a FAIL, never a skip.
 
-export const CHAIN_ID = 8453;
+export const CHAIN_ID = 4663;
 const NAME = "ReapoSeasonLog";
 
 const isAddr = (v) => typeof v === "string" && /^0x[0-9a-fA-F]{40}$/.test(v);
@@ -57,7 +57,7 @@ export async function verifyDeployment({ log, logTx, genesis, seasonDays, rpc, A
       fail(`chain id ${id}, expected ${CHAIN_ID}`);
       return done();
     }
-    ok(`chain id ${CHAIN_ID} (Base)`);
+    ok(`chain id ${CHAIN_ID} (Robinhood Chain)`);
   } catch (e) {
     fail(`chain id unreadable: ${e.message}`);
     return done();

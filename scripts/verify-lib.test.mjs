@@ -17,7 +17,7 @@ function chain(over = {}) {
   const codes = { [LOG]: RUNTIME, ...over.codes };
   const tx = { input: over.input ?? ART.ReapoSeasonLog.creation + encodeArgs(G, D), to: over.to ?? null, created: over.created ?? LOG };
   return async (method, params) => {
-    if (method === "eth_chainId") return over.chainId ?? "0x2105";
+    if (method === "eth_chainId") return over.chainId ?? "0x1237";
     if (method === "eth_getCode") return codes[params[0].toLowerCase()] ?? "0x";
     if (method === "eth_getTransactionByHash") return params[0] === TX ? { input: tx.input, to: tx.to } : null;
     if (method === "eth_getTransactionReceipt") return params[0] === TX ? { status: over.status ?? "0x1", contractAddress: tx.created } : null;
@@ -51,7 +51,7 @@ test("appended bytes after the arguments fail", async () => {
 });
 
 test("wrong chain fails before anything else", async () => {
-  const r = await verifyDeployment({ ...args, rpc: chain({ chainId: "0x1237" }) });
+  const r = await verifyDeployment({ ...args, rpc: chain({ chainId: "0x2105" }) }); // Base, a different chain
   assert.equal(r.ok, false);
   assert.equal(r.lines.length, 1);
 });

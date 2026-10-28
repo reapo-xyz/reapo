@@ -49,8 +49,9 @@ export type DiscoveredWallet = {
  * Wallets that announce EVM support but only speak a fixed list of networks.
  * They refuse both the switch and the add, so they stay listed but disabled.
  */
-// Base is supported by every listed EVM wallet, Phantom included, so none is disabled here.
-const UNSUPPORTED_WALLETS: Record<string, string> = {};
+const UNSUPPORTED_WALLETS: Record<string, string> = {
+  "app.phantom": `Phantom cannot add ${chain.name}`,
+};
 
 type WalletState = {
   wallets: DiscoveredWallet[];
@@ -58,7 +59,7 @@ type WalletState = {
   walletName: string | null;
   chainId: number | null;
   onChain: boolean;
-  /** ETH balance on Base, read from the RPC; null while unknown. */
+  /** ETH balance on Robinhood Chain, read from the RPC; null while unknown. */
   balance: string | null;
   connecting: boolean;
   switching: boolean;
@@ -411,7 +412,7 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
   const walletName = remembered?.name ?? null;
 
   // Balance comes from the chain's RPC, not the wallet, so it is the
-  // Base balance whatever network the wallet is pointed at.
+  // Robinhood Chain balance whatever network the wallet is pointed at.
   const [balance, setBalance] = useState<string | null>(null);
   const [balanceTick, setBalanceTick] = useState(0);
   const refreshBalance = useCallback(() => setBalanceTick((n) => n + 1), []);

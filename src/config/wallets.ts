@@ -1,5 +1,4 @@
-// EVM wallets that reach Base (chain 8453). Coinbase Wallet comes first: Base is its home network.
-// Phantom supports Base too, so it is a normal, enabled entry here.
+// EVM wallets that can add a custom network, and so can reach Robinhood Chain.
 // Installed ones are found over EIP-6963 by their rdns; the rest are offered
 // with an install link and, where the wallet publishes one, a mobile deep link
 // that opens this site inside the wallet's own browser.
@@ -16,13 +15,6 @@ export type CatalogWallet = {
 
 export const WALLET_CATALOG: CatalogWallet[] = [
   {
-    id: "coinbase",
-    name: "Coinbase Wallet",
-    rdns: ["com.coinbase.wallet"],
-    install: "https://www.coinbase.com/wallet/downloads",
-    deepLink: (url) => `https://go.cb-w.com/dapp?cb_url=${encodeURIComponent(url)}`,
-  },
-  {
     id: "metamask",
     name: "MetaMask",
     rdns: ["io.metamask", "io.metamask.mobile"],
@@ -31,18 +23,18 @@ export const WALLET_CATALOG: CatalogWallet[] = [
   },
   { id: "rabby", name: "Rabby", rdns: ["io.rabby"], install: "https://rabby.io/" },
   {
-    id: "phantom",
-    name: "Phantom",
-    rdns: ["app.phantom"],
-    install: "https://phantom.com/download",
-    deepLink: (url) => `https://phantom.app/ul/browse/${encodeURIComponent(url)}?ref=${encodeURIComponent(url)}`,
-  },
-  {
     id: "okx",
     name: "OKX Wallet",
     rdns: ["com.okex.wallet"],
     install: "https://web3.okx.com/download",
     deepLink: (url) => `okx://wallet/dapp/url?dappUrl=${encodeURIComponent(url)}`,
+  },
+  {
+    id: "coinbase",
+    name: "Coinbase Wallet",
+    rdns: ["com.coinbase.wallet"],
+    install: "https://www.coinbase.com/wallet/downloads",
+    deepLink: (url) => `https://go.cb-w.com/dapp?cb_url=${encodeURIComponent(url)}`,
   },
   {
     id: "trust",

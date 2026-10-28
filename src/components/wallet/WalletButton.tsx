@@ -93,7 +93,7 @@ function WalletDialog({ onClose }: { onClose: () => void }) {
           <div className="min-w-0">
             <span className="kicker">Your wallet · no password</span>
             <h2 id="wallet-title">Connect wallet</h2>
-            <p>Seasons and quests can be read without a wallet. Connecting shares your address so the board can check your Base activity; a check-in or stamp opens in your wallet for you to read and sign. This site never holds a key.</p>
+            <p>Seasons and quests can be read without a wallet. Connecting shares your address so the board can check your Robinhood Chain activity; a check-in or stamp opens in your wallet for you to read and sign. This site never holds a key.</p>
           </div>
           <button type="button" aria-label="Close" onClick={close} className="iconbtn shrink-0">
             <CloseIcon size={16} />

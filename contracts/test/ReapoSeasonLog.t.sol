@@ -4,6 +4,27 @@ pragma solidity ^0.8.24;
 import {Test} from "forge-std/Test.sol";
 import {ReapoSeasonLog} from "../src/ReapoSeasonLog.sol";
 
+/// Returns a fixed L2 block, like the ArbSys precompile on Robinhood Chain.
+contract FakeArbSys {
+    function arbBlockNumber() external pure returns (uint256) {
+        return 99_000_123;
+    }
+}
+
+/// Burns all gas it is given, like broken code at 0x64.
+contract GasBurner {
+    fallback() external {
+        while (true) {}
+    }
+}
+
+/// Answers with zero, like a chain where 0x64 is an empty stub.
+contract ZeroArbSys {
+    function arbBlockNumber() external pure returns (uint256) {
+        return 0;
+    }
+}
+
 contract ReapoSeasonLogTest is Test {
     ReapoSeasonLog book;
     uint64 constant GENESIS = 1792972800; // 2026-10-26 00:00 UTC
@@ -253,5 +274,33 @@ contract ReapoSeasonLogTest is Test {
         vm.expectRevert(ReapoSeasonLog.AlreadyStamped.selector);
         book.stampSelfClaimed(q, ev);
         vm.stopPrank();
+    }
+
+    function test_chainBlock_usesArbSysWhenItAnswers() public {
+        vm.etch(address(0x64), address(new FakeArbSys()).code);
+        assertEq(book.chainBlock(), 99_000_123);
+        vm.startPrank(alice);
+        for (uint256 d = 1; d <= 2; d++) {
+            _day(d);
+            book.checkIn();
+        }
+        book.stampStreak(2);
+        book.stampSelfClaimed(keccak256("q"), keccak256("ev"));
+        vm.stopPrank();
+        assertEq(book.streakStampOf(0, alice, 2), 99_000_123);
+        assertEq(book.selfStampOf(0, alice, keccak256("q")).blockNumber, 99_000_123);
+    }
+
+    function test_chainBlock_fallsBackOnBrokenPrecompile() public {
+        vm.roll(500);
+        vm.etch(address(0x64), address(new GasBurner()).code);
+        assertEq(book.chainBlock(), 500);
+        uint256 g = gasleft();
+        vm.prank(alice);
+        book.stampSelfClaimed(keccak256("q"), keccak256("ev"));
+        assertLt(g - gasleft(), 300_000, "broken 0x64 burns at most its 30k cap, not the call");
+        assertEq(book.selfStampOf(0, alice, keccak256("q")).blockNumber, 500);
+        vm.etch(address(0x64), address(new ZeroArbSys()).code);
+        assertEq(book.chainBlock(), 500);
     }
 }

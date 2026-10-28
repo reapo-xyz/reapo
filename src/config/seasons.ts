@@ -1,4 +1,4 @@
-import { USDC, WETH } from "@/config/brand";
+import { USDG, WETH } from "@/config/brand";
 
 /*
  * Every season setting in ONE file: the clock, season names, quests, points and milestones.
@@ -20,8 +20,12 @@ export const SEASON_STATUS = "Preview season — no reward pool is funded.";
 /** Names rotate; season n uses NAMES[(n - 1) % NAMES.length]. */
 export const SEASON_NAMES = ["Sprout", "Bloom", "Harvest", "Fallow"] as const;
 
-/** One UTC day in blocks at Base's 2 s block time; the log quests look back this far. */
-export const DAY_BLOCKS = 43_200;
+/**
+ * One UTC day in Robinhood Chain blocks (about 0.1 s per block, measured 27 Oct 2026: 100,000 blocks in ~10,300 s);
+ * the log quests look back this far. The official RPC serves log queries over this span; drpc (10,000) and publicnode
+ * (recent blocks only) do not, so the relay tries the official endpoint first.
+ */
+export const DAY_BLOCKS = 840_000;
 
 export type QuestKind =
   | { type: "nonce"; min: number }
@@ -35,7 +39,7 @@ export type QuestKind =
 /**
  * How a completed quest is proven:
  *   contract  ReapoSeasonLog checks it itself (check-ins, streaks)
- *   chain     the site reads it from Base for the connected wallet; stamping it on chain is a self-claim
+ *   chain     the site reads it from Robinhood Chain for the connected wallet; stamping it on chain is a self-claim
  */
 export type QuestProof = "contract" | "chain";
 
@@ -55,8 +59,8 @@ export const QUESTS: Quest[] = [
   {
     id: "first-furrow",
     title: "First furrow",
-    task: "Have at least one transaction sent from this wallet on Base.",
-    rule: "Account nonce on Base is 1 or more.",
+    task: "Have at least one transaction sent from this wallet on Robinhood Chain.",
+    rule: "Account nonce on Robinhood Chain is 1 or more.",
     points: 10,
     proof: "chain",
     kind: { type: "nonce", min: 1 },
@@ -64,8 +68,8 @@ export const QUESTS: Quest[] = [
   {
     id: "worn-boots",
     title: "Worn boots",
-    task: "Have 25 or more transactions sent from this wallet on Base.",
-    rule: "Account nonce on Base is 25 or more.",
+    task: "Have 25 or more transactions sent from this wallet on Robinhood Chain.",
+    rule: "Account nonce on Robinhood Chain is 25 or more.",
     points: 25,
     proof: "chain",
     kind: { type: "nonce", min: 25 },
@@ -73,8 +77,8 @@ export const QUESTS: Quest[] = [
   {
     id: "seed-jar",
     title: "Seed jar",
-    task: "Keep at least 0.001 ETH on Base for gas.",
-    rule: "ETH balance on Base is 0.001 or more.",
+    task: "Keep at least 0.001 ETH on Robinhood Chain for gas.",
+    rule: "ETH balance on Robinhood Chain is 0.001 or more.",
     points: 10,
     proof: "chain",
     kind: { type: "ethBalance", minWei: "1000000000000000" },
@@ -82,17 +86,17 @@ export const QUESTS: Quest[] = [
   {
     id: "steady-stalk",
     title: "Steady stalk",
-    task: "Hold at least 1 USDC on Base.",
-    rule: "USDC balanceOf(wallet) on Base is 1 or more.",
+    task: "Hold at least 1 USDG on Robinhood Chain.",
+    rule: "USDG balanceOf(wallet) on Robinhood Chain is 1 or more.",
     points: 15,
     proof: "chain",
-    kind: { type: "tokenBalance", token: USDC.address, symbol: "USDC", decimals: 6, min: "1000000" },
+    kind: { type: "tokenBalance", token: USDG.address, symbol: "USDG", decimals: 6, min: "1000000" },
   },
   {
     id: "wrapped-grain",
     title: "Wrapped grain",
-    task: "Hold any amount of WETH on Base.",
-    rule: "WETH balanceOf(wallet) on Base is above 0.",
+    task: "Hold any amount of WETH on Robinhood Chain.",
+    rule: "WETH balanceOf(wallet) on Robinhood Chain is above 0.",
     points: 10,
     proof: "chain",
     kind: { type: "tokenBalance", token: WETH, symbol: "WETH", decimals: 18, min: "1" },
@@ -100,11 +104,11 @@ export const QUESTS: Quest[] = [
   {
     id: "market-day",
     title: "Market day",
-    task: "Send USDC from this wallet on Base in the last 24 hours (a payment, a swap, a deposit).",
-    rule: "A USDC Transfer log with from = wallet in the last 43,200 blocks.",
+    task: "Send USDG from this wallet on Robinhood Chain in the last 24 hours (a payment, a swap, a deposit).",
+    rule: "A USDG Transfer log with from = wallet in the last 840,000 blocks (about one day).",
     points: 20,
     proof: "chain",
-    kind: { type: "sentToken", token: USDC.address, symbol: "USDC", lookbackBlocks: DAY_BLOCKS },
+    kind: { type: "sentToken", token: USDG.address, symbol: "USDG", lookbackBlocks: DAY_BLOCKS },
   },
   {
     id: "morning-round",
@@ -136,7 +140,7 @@ export const QUESTS: Quest[] = [
   {
     id: "own-plot",
     title: "Own plot",
-    task: "Hold any amount of $REAPO on Base (opens at launch).",
+    task: "Hold any amount of $REAPO on Robinhood Chain (opens at launch).",
     rule: "$REAPO balanceOf(wallet) is above 0. Waits for the token address.",
     points: 15,
     proof: "chain",

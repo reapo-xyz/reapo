@@ -125,7 +125,7 @@ export function QuestsPanel({ focus }: { focus?: number | null }) {
             ) : null}
           </p>
         ) : (
-          <p className="tiny">Connect a wallet, or paste any Base address to look at its quests without connecting.</p>
+          <p className="tiny">Connect a wallet, or paste any {CHAIN.name} address to look at its quests without connecting.</p>
         )}
         <div className="row">
           {!address ? (
@@ -134,7 +134,7 @@ export function QuestsPanel({ focus }: { focus?: number | null }) {
             </button>
           ) : null}
           <button type="button" className="btn small" onClick={() => void s.refresh()} disabled={!s.subject || s.loading}>
-            {s.loading ? "Reading Base…" : "Check now"}
+            {s.loading ? `Reading ${CHAIN.name}…` : "Check now"}
           </button>
           {s.readOnly && address ? (
             <button type="button" className="btn small" onClick={() => s.setWatchAddress(null)}>
@@ -152,7 +152,7 @@ export function QuestsPanel({ focus }: { focus?: number | null }) {
             }
           }}
         >
-          <input className="field" value={paste} onChange={(e) => setPaste(e.target.value)} placeholder="0x… any Base address (read-only)" aria-label="Base address to check" spellCheck={false} />
+          <input className="field" value={paste} onChange={(e) => setPaste(e.target.value)} placeholder={`0x… any ${CHAIN.name} address (read-only)`} aria-label={`${CHAIN.name} address to check`} spellCheck={false} />
           <button type="submit" className="btn small" disabled={!isAddress(paste.trim())}>
             Look
           </button>
@@ -172,7 +172,7 @@ export function QuestsPanel({ focus }: { focus?: number | null }) {
               <div className="min-w-0 grid gap-1">
                 <div className="top">
                   <b>{q.title}</b>
-                  <span className={`tag ${q.proof === "contract" ? "leaf" : ""}`}>{q.proof === "contract" ? "contract-checked" : "read from Base"}</span>
+                  <span className={`tag ${q.proof === "contract" ? "leaf" : ""}`}>{q.proof === "contract" ? "contract-checked" : "read from chain"}</span>
                   <span className="pts">+{q.points}</span>
                 </div>
                 <p>{q.task}</p>
@@ -270,7 +270,7 @@ export function CheckInPanel() {
           </button>
         ) : (
           <button type="button" className="btn primary big wide" disabled={s.checkedInToday || !!s.busy || !s.subject || (logLive() && s.readOnly)} onClick={() => void s.checkIn()} data-testid="checkin">
-            {s.busy === "checkin" ? "Confirm in wallet…" : s.checkedInToday ? "Done for today" : logLive() ? "Check in on Base" : "Practice check-in"}
+            {s.busy === "checkin" ? "Confirm in wallet…" : s.checkedInToday ? "Done for today" : logLive() ? `Check in on ${CHAIN.name}` : "Practice check-in"}
           </button>
         )}
         {!s.subject ? <p className="tiny soft">Connect a wallet (or paste an address on the Quests board) first.</p> : null}
@@ -364,7 +364,7 @@ export function TokenPanel() {
         <CaBlock compact />
         <div className="btns">
           <a className="btn primary" href={buyUrl()} target="_blank" rel="noreferrer" data-testid="buy">
-            {TOKEN.isLive ? `Buy ${BRAND.symbol}` : `Open ${LAUNCHPAD.name}`}
+            {TOKEN.isLive ? `Buy ${BRAND.symbol}` : `${LAUNCHPAD.name} · at launch`}
           </a>
           {chart ? (
             <a className="btn" href={chart} target="_blank" rel="noreferrer">
@@ -387,7 +387,7 @@ export function TokenPanel() {
         <dd>{usd(t?.liquidityUsd, 0)}</dd>
       </dl>
       <p className="tiny soft">
-        Launch venue: {LAUNCHPAD.name}. After launch the token trades in its {LAUNCHPAD.pool} pool: fixed supply of 1 billion, 18 decimals, liquidity locked permanently, and a 1% fee taken in ETH or as creator tax. That describes how the pool is set up, not what the price will do.
+        Launch venue: {LAUNCHPAD.name}, the launchpad on {CHAIN.name}. The buy button opens the launchpad home until the address is published, then the {BRAND.symbol} page there. This says where the token trades, not what the price will do.
       </p>
       <div>
         <h3>

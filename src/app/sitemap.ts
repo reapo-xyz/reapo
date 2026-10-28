@@ -1,7 +1,7 @@
 import type { MetadataRoute } from "next";
 import { BRAND } from "@/config/brand";
 
-// Every indexable page (same list as the start card and guide links). The owner deploy page stays out.
+// Every indexable page (same list as the start card and guide links).
 export const ROUTES = ["", "/seasons", "/quests", "/farmboard", "/checkin", "/token", "/docs", "/privacy", "/terms", "/cookies"];
 
 export default function sitemap(): MetadataRoute.Sitemap {

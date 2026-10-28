@@ -8,7 +8,7 @@ import type { FarmerState } from "@/lib/season/clock";
 import type { Readings } from "@/lib/season/quests";
 
 /*
- * Reads everything the quest board needs for one wallet from Base, all at ONE block so the inputs agree:
+ * Reads everything the quest board needs for one wallet from Robinhood Chain, all at ONE block so the inputs agree:
  * nonce, ETH balance, balanceOf for the quest tokens (and $REAPO once live), Transfer logs sent by the wallet in
  * each quest's look-back window, and the ReapoSeasonLog farmer record once the contract is deployed.
  * Goes through the site's relay first (src/lib/client.ts).

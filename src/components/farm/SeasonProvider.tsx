@@ -16,7 +16,7 @@ import { questKey, readWallet, type ChainReadings } from "@/lib/season/read";
 
 /*
  * Shared season state for the HUD, the farm and every panel: the season clock, the wallet being checked
- * (the connected one, or any address pasted in read-only mode), its readings from Base, the quest results,
+ * (the connected one, or any address pasted in read-only mode), its readings from Robinhood Chain, the quest results,
  * check-ins (ReapoSeasonLog once deployed, this browser otherwise) and the Farmboard history.
  */
 
@@ -132,7 +132,7 @@ export function SeasonProvider({ children }: { children: React.ReactNode }) {
     async (label: string, data: `0x${string}`) => {
       if (!onChain) await switchNetwork();
       const hash = await sendTransaction({ to: CONTRACTS.log, data });
-      setNotice(`${label}: sent, waiting for Base to include it…`);
+      setNotice(`${label}: sent, waiting for Robinhood Chain to include it…`);
       const r = await waitForReceipt(hash);
       if (!r.ok) throw new Error(`${label} reverted on chain.`);
       setNotice(`${label}: confirmed in block ${r.blockNumber.toLocaleString("en-US")}.`);
@@ -159,7 +159,7 @@ export function SeasonProvider({ children }: { children: React.ReactNode }) {
       } else {
         if (!subject) throw new Error("Connect a wallet (or paste an address) to keep practice check-ins for it.");
         setPractice({ ...practice, days: [...practice.days, today] });
-        setNotice("Practice check-in kept in this browser. Nothing was sent to Base.");
+        setNotice("Practice check-in kept in this browser. Nothing was sent to Robinhood Chain.");
       }
     } catch (e) {
       setNotice(explain(e));
@@ -191,7 +191,7 @@ export function SeasonProvider({ children }: { children: React.ReactNode }) {
           }
         } else {
           setPractice({ ...practice, stamps: { ...practice.stamps, [q.id]: { at: Date.now(), evidence } } });
-          setNotice(`Practice stamp for "${q.title}" kept in this browser. Nothing was sent to Base.`);
+          setNotice(`Practice stamp for "${q.title}" kept in this browser. Nothing was sent to Robinhood Chain.`);
         }
       } catch (e) {
         setNotice(explain(e));

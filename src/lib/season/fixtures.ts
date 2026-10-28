@@ -1,6 +1,6 @@
-// Test helpers: the live quest list and the USDC key used in readings.
+// Test helpers: the live quest list and the USDG key used in readings.
 import { QUESTS } from "../../config/seasons";
-import { USDC } from "../../config/brand";
+import { USDG } from "../../config/brand";
 
 export { QUESTS };
-export const USDC_QUEST_TOKEN = USDC.address.toLowerCase();
+export const USDG_QUEST_TOKEN = USDG.address.toLowerCase();
